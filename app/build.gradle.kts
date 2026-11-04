@@ -40,6 +40,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    // 3D Graphics Engine
+    // 3D Rendering Engine
     implementation("io.github.sceneview:sceneview:2.3.0")
 }

@@ -15,6 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.sceneview.SceneView
+import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberModelLoader
+import io.github.sceneview.rememberCameraManipulator
+import io.github.sceneview.rememberNodes
+import io.github.sceneview.node.ModelNode
 
 class MainActivity : ComponentActivity() {
 
@@ -22,107 +28,160 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            UltraRacingGame()
+            ApurbaCarScreen()
         }
     }
 }
 
 @Composable
-fun UltraRacingGame() {
+fun ApurbaCarScreen() {
 
-    var gameStarted by remember { mutableStateOf(false) }
+    val engine = rememberEngine()
+    val modelLoader = rememberModelLoader(engine)
 
-    val background = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF080D1B),
-            Color(0xFF111D35),
-            Color(0xFF05070D)
-        )
-    )
+    var selectedCar by remember {
+        mutableStateOf("M'r ApurbA Car")
+    }
+
+    var speed by remember {
+        mutableIntStateOf(0)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(background)
-            .padding(20.dp),
-        contentAlignment = Alignment.Center
+            .background(Color(0xFF080D18))
     ) {
 
+        // 3D CAR VIEW
+        SceneView(
+            modifier = Modifier.fillMaxSize(),
+            engine = engine,
+            modelLoader = modelLoader,
+            cameraManipulator = rememberCameraManipulator(),
+            childNodes = rememberNodes {
+                add(
+                    ModelNode(
+                        modelInstance = modelLoader.createModelInstance(
+                            "models/apurba_car.glb"
+                        ),
+                        scaleToUnits = 1.0f
+                    )
+                )
+            }
+        )
+
+        // TOP INFORMATION
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(18.dp)
         ) {
 
             Text(
-                text = "ULTRA RACING",
-                color = Color.White,
-                fontSize = 36.sp,
+                text = "ULTRA RACING GAME",
+                color = Color.Cyan,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Black
             )
 
             Text(
-                text = "GAME",
-                color = Color(0xFF00E5FF),
-                fontSize = 30.sp,
+                text = selectedCar,
+                color = Color.White,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(15.dp))
-
             Text(
-                text = if (gameStarted)
-                    "RACING MODE READY"
-                else
-                    "WELCOME TO THE RACING WORLD",
+                text = "FIRST EDITION",
                 color = Color.LightGray,
-                fontSize = 15.sp
+                fontSize = 12.sp
             )
+        }
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(0.75f)
-                    .height(110.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF172642)
-                )
+        // SPEED DISPLAY
+        Card(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xDD101E32)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                Text(
+                    text = "SPEED",
+                    color = Color.Cyan,
+                    fontSize = 13.sp
+                )
+
+                Text(
+                    text = "$speed",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black
+                )
+
+                Text(
+                    text = "KM/H",
+                    color = Color.LightGray,
+                    fontSize = 11.sp
+                )
+            }
+        }
+
+        // CONTROL BUTTONS
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = {
+                        speed = (speed - 10).coerceAtLeast(0)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF263B58)
+                    )
+                ) {
+                    Text("BRAKE")
+                }
+
+                Button(
+                    onClick = {
+                        speed = (speed + 10).coerceAtMost(300)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00BCD4)
+                    )
                 ) {
                     Text(
-                        text = "3D RACING ENGINE",
-                        color = Color(0xFF00E5FF),
-                        fontSize = 23.sp,
-                        fontWeight = FontWeight.Bold
+                        "ACCELERATE",
+                        color = Color.Black
                     )
                 }
             }
 
             Button(
-                onClick = { gameStarted = !gameStarted },
-                modifier = Modifier
-                    .width(240.dp)
-                    .height(55.dp),
+                onClick = {
+                    speed = 0
+                },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00B8D4)
-                ),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text(
-                    text = if (gameStarted) "BACK" else "START RACE",
-                    color = Color.Black,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    containerColor = Color(0xFFE53935)
                 )
+            ) {
+                Text("RESET")
             }
-
-            Text(
-                text = "OFFLINE • SINGLE PLAYER",
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
         }
     }
 }

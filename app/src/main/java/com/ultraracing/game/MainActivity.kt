@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-import io.github.sceneview.SceneView
+import io.github.sceneview.Scene
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberModelInstance
@@ -28,18 +28,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            ApurbaCarScreen()
+            MaterialTheme {
+                UltraRacingGame()
+            }
         }
     }
 }
 
 @Composable
-fun ApurbaCarScreen() {
+fun UltraRacingGame() {
 
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
 
-    var speed by remember { mutableIntStateOf(0) }
+    var speed by remember {
+        mutableIntStateOf(0)
+    }
+
+    var isAccelerating by remember {
+        mutableStateOf(false)
+    }
 
     Box(
         modifier = Modifier
@@ -47,12 +55,13 @@ fun ApurbaCarScreen() {
             .background(Color(0xFF080D18))
     ) {
 
-        SceneView(
+        Scene(
             modifier = Modifier.fillMaxSize(),
             engine = engine,
             modelLoader = modelLoader,
             cameraManipulator = rememberCameraManipulator()
         ) {
+
             rememberModelInstance(
                 modelLoader,
                 "models/apurba_car.glb"
@@ -69,49 +78,65 @@ fun ApurbaCarScreen() {
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(18.dp)
+                .padding(20.dp)
         ) {
+
             Text(
-                "ULTRA RACING GAME",
+                text = "ULTRA RACING GAME",
                 color = Color.Cyan,
-                fontSize = 24.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Black
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                "M'r ApurbA Car",
+                text = "M'r ApurbA Car",
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 23.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                "FIRST EDITION",
-                color = Color.LightGray,
-                fontSize = 12.sp
+                text = "FIRST EDITION",
+                color = Color(0xFF00FF9D),
+                fontSize = 13.sp
             )
         }
 
         Card(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(18.dp),
+                .padding(20.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xDD101E32)
             )
         ) {
+
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier.padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("SPEED", color = Color.Cyan)
+
                 Text(
-                    "$speed",
+                    text = "SPEED",
+                    color = Color.Cyan,
+                    fontSize = 14.sp
+                )
+
+                Text(
+                    text = "$speed",
                     color = Color.White,
-                    fontSize = 32.sp,
+                    fontSize = 36.sp,
                     fontWeight = FontWeight.Black
                 )
-                Text("KM/H", color = Color.LightGray)
+
+                Text(
+                    text = "KM/H",
+                    color = Color.LightGray,
+                    fontSize = 12.sp
+                )
             }
         }
 
@@ -120,13 +145,18 @@ fun ApurbaCarScreen() {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
             Button(
                 onClick = {
                     speed = (speed - 10).coerceAtLeast(0)
-                }
+                    isAccelerating = false
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF263B58)
+                )
             ) {
                 Text("BRAKE")
             }
@@ -134,19 +164,42 @@ fun ApurbaCarScreen() {
             Button(
                 onClick = {
                     speed = (speed + 10).coerceAtMost(300)
+                    isAccelerating = true
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Cyan
+                    containerColor = Color(0xFF00E5FF)
                 )
             ) {
-                Text("ACCELERATE", color = Color.Black)
+                Text(
+                    "ACCELERATE",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Button(
-                onClick = { speed = 0 }
+                onClick = {
+                    speed = 0
+                    isAccelerating = false
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE53935)
+                )
             ) {
                 Text("RESET")
             }
+        }
+
+        if (isAccelerating) {
+            Text(
+                text = "ENGINE ACTIVE",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 85.dp),
+                color = Color(0xFF00FF9D),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

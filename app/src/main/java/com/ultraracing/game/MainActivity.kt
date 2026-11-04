@@ -1,3 +1,4 @@
+
 package com.ultraracing.game
 
 import android.content.Context
@@ -8,7 +9,6 @@ import android.hardware.SensorManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,14 +17,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.github.sceneview.SceneView
+import io.github.sceneview.rememberModelInstance
+import kotlin.math.abs
 import kotlinx.coroutines.delay
-import kotlin.math.*
 
 private val Dark = Color(0xFF050B16)
 private val Cyan = Color(0xFF00E5FF)
@@ -34,6 +34,9 @@ private val Red = Color(0xFFFF3548)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        requestedOrientation =
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         window.statusBarColor = android.graphics.Color.BLACK
         window.navigationBarColor = android.graphics.Color.BLACK
@@ -54,18 +57,15 @@ fun RacingScreen() {
     var gyroEnabled by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var steering by remember { mutableFloatStateOf(0f) }
-    var roadPosition by remember { mutableFloatStateOf(0f) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Gyroscope-based phone orientation steering
     DisposableEffect(gyroEnabled) {
         val manager =
             context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        val sensor = manager.getDefaultSensor(
-            Sensor.TYPE_ROTATION_VECTOR
-        )
+        val sensor =
+            manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
@@ -79,15 +79,10 @@ fun RacingScreen() {
                     event.values
                 )
 
-                SensorManager.getOrientation(
-                    matrix,
-                    orientation
-                )
+                SensorManager.getOrientation(matrix, orientation)
 
-                // Phone tilt angle
-                val roll = orientation[2]
-
-                steering = (roll / 0.65f).coerceIn(-1f, 1f)
+                steering = (orientation[2] / 0.65f)
+                    .coerceIn(-1f, 1f)
             }
 
             override fun onAccuracyChanged(
@@ -109,7 +104,6 @@ fun RacingScreen() {
         }
     }
 
-    // Driving physics: acceleration and braking
     LaunchedEffect(accelerating, braking) {
         while (accelerating || braking) {
             delay(50)
@@ -121,228 +115,23 @@ fun RacingScreen() {
         }
     }
 
-    // Road movement
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(40)
-
-            if (speed > 0) {
-                roadPosition += speed / 150f
-            }
-        }
-    }
-
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Dark)
     ) {
-        val w = maxWidth
-        val h = maxHeight
-
-                // REAL 3D GAME WORLD
-        io.github.sceneview.SceneView(
+        // REAL 3D CAR MODEL
+        SceneView(
             modifier = Modifier.fillMaxSize()
         ) {
-            val carModel = io.github.sceneview.rememberModelInstance(
+            rememberModelInstance(
                 modelLoader,
                 "spectral_gt_rs_game_ready.glb"
-            )
-
-            if (carModel != null) {
-                io.github.sceneview.node.ModelNode(
-                    modelInstance = carModel,
+            )?.let { instance ->
+                io.github.sceneview.ModelNode(
+                    modelInstance = instance,
                     scaleToUnits = 2.0f,
                     autoAnimate = true
-                )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "LOADING 3D CAR...",
-                        color = Cyan,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-            val width = size.width
-            val height = size.height
-            val bend = steering * width * 0.12f
-
-            // Sky
-            drawRect(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF071A38),
-                        Color(0xFF16466A),
-                        Color(0xFF6C8292),
-                        Color(0xFF172536)
-                    )
-                )
-            )
-
-            // Sun
-            drawCircle(
-                Color(0xFFFFC56B),
-                height * 0.065f,
-                Offset(width * 0.78f, height * 0.22f)
-            )
-
-            // Mountains
-            val mountain = Path().apply {
-                moveTo(0f, height * 0.53f)
-                lineTo(width * 0.12f, height * 0.31f)
-                lineTo(width * 0.24f, height * 0.48f)
-                lineTo(width * 0.38f, height * 0.28f)
-                lineTo(width * 0.54f, height * 0.50f)
-                lineTo(width * 0.72f, height * 0.30f)
-                lineTo(width, height * 0.49f)
-                lineTo(width, height)
-                lineTo(0f, height)
-                close()
-            }
-
-            drawPath(mountain, Color(0xFF172E42))
-
-            // Grass
-            drawRect(
-                Color(0xFF173D31),
-                topLeft = Offset(0f, height * 0.53f),
-                size = Size(width, height * 0.47f)
-            )
-
-            // Road
-            val road = Path().apply {
-                moveTo(width * 0.46f + bend * 0.35f, height * 0.43f)
-                lineTo(width * 0.54f + bend * 0.35f, height * 0.43f)
-                lineTo(width * 0.91f + bend, height)
-                lineTo(width * 0.09f + bend, height)
-                close()
-            }
-
-            drawPath(road, Color(0xFF252B35))
-
-            // Road edges
-            drawLine(
-                Color.White,
-                Offset(width * 0.46f + bend * 0.35f, height * 0.43f),
-                Offset(width * 0.09f + bend, height),
-                5f
-            )
-
-            drawLine(
-                Color.White,
-                Offset(width * 0.54f + bend * 0.35f, height * 0.43f),
-                Offset(width * 0.91f + bend, height),
-                5f
-            )
-
-            // Lane markings
-            for (i in 0..10) {
-                val progress =
-                    ((i / 10f + roadPosition * 0.025f) % 1f)
-
-                val y = height * (
-                    0.43f + progress * progress * 0.57f
-                )
-
-                val halfWidth =
-                    width * (0.008f + progress * 0.025f)
-
-                drawRoundRect(
-                    Color.White,
-                    topLeft = Offset(
-                        width * 0.5f - halfWidth / 2 + bend * progress,
-                        y
-                    ),
-                    size = Size(
-                        halfWidth,
-                        5f + progress * 18f
-                    ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f)
-                )
-            }
-
-            // Car shadow
-            drawOval(
-                Color.Black.copy(alpha = 0.55f),
-                topLeft = Offset(
-                    width * 0.34f + bend * 0.8f,
-                    height * 0.79f
-                ),
-                size = Size(width * 0.32f, height * 0.14f)
-            )
-
-            // Car body
-            val car = Path().apply {
-                moveTo(width * 0.32f + bend * 0.8f, height * 0.91f)
-                lineTo(width * 0.34f + bend * 0.8f, height * 0.84f)
-                lineTo(width * 0.40f + bend * 0.8f, height * 0.80f)
-                lineTo(width * 0.44f + bend * 0.8f, height * 0.72f)
-                lineTo(width * 0.56f + bend * 0.8f, height * 0.72f)
-                lineTo(width * 0.60f + bend * 0.8f, height * 0.80f)
-                lineTo(width * 0.66f + bend * 0.8f, height * 0.84f)
-                lineTo(width * 0.68f + bend * 0.8f, height * 0.91f)
-                lineTo(width * 0.63f + bend * 0.8f, height * 0.96f)
-                lineTo(width * 0.37f + bend * 0.8f, height * 0.96f)
-                close()
-            }
-
-            drawPath(
-                car,
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFFF465D),
-                        Color(0xFFD90028),
-                        Color(0xFF650016)
-                    )
-                )
-            )
-
-            // Windows
-            val window = Path().apply {
-                moveTo(width * 0.405f + bend * 0.8f, height * 0.81f)
-                lineTo(width * 0.445f + bend * 0.8f, height * 0.745f)
-                lineTo(width * 0.555f + bend * 0.8f, height * 0.745f)
-                lineTo(width * 0.595f + bend * 0.8f, height * 0.81f)
-                close()
-            }
-
-            drawPath(window, Color(0xFF071A2C))
-
-            // Headlights
-            drawRoundRect(
-                Color(0xFFBDFBFF),
-                Offset(width * 0.345f + bend * 0.8f, height * 0.865f),
-                Size(width * 0.075f, height * 0.022f),
-                androidx.compose.ui.geometry.CornerRadius(8f)
-            )
-
-            drawRoundRect(
-                Color(0xFFBDFBFF),
-                Offset(width * 0.58f + bend * 0.8f, height * 0.865f),
-                Size(width * 0.075f, height * 0.022f),
-                androidx.compose.ui.geometry.CornerRadius(8f)
-            )
-
-            // Grill
-            drawRoundRect(
-                Color(0xFF10151D),
-                Offset(width * 0.44f + bend * 0.8f, height * 0.89f),
-                Size(width * 0.12f, height * 0.035f),
-                androidx.compose.ui.geometry.CornerRadius(12f)
-            )
-
-            // Wheels
-            for (x in listOf(0.35f, 0.61f)) {
-                drawRoundRect(
-                    Color.Black,
-                    Offset(width * x + bend * 0.8f, height * 0.85f),
-                    Size(width * 0.045f, height * 0.11f),
-                    androidx.compose.ui.geometry.CornerRadius(10f)
                 )
             }
         }
@@ -386,6 +175,17 @@ fun RacingScreen() {
             }
         }
 
+        // GAME TITLE
+        Text(
+            "ULTRA RACING GAME",
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 14.dp),
+            color = Cyan,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Black
+        )
+
         // SETTINGS BUTTON
         Surface(
             modifier = Modifier
@@ -405,6 +205,78 @@ fun RacingScreen() {
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )
+        }
+
+        // RESET BUTTON
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 48.dp)
+                .clickable {
+                    speed = 0
+                    accelerating = false
+                    braking = false
+                    steering = 0f
+                },
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xDD101D30)
+        ) {
+            Text(
+                "↻ RESET",
+                modifier = Modifier.padding(
+                    horizontal = 14.dp,
+                    vertical = 8.dp
+                ),
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // BRAKE
+        ControlButton(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 24.dp, bottom = 18.dp),
+            icon = "■",
+            label = "BRAKE",
+            active = braking,
+            color = Red
+        ) {
+            braking = !braking
+            if (braking) accelerating = false
+        }
+
+        // STEERING
+        if (!gyroEnabled) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                SteeringButton("◀") {
+                    steering = (steering - 0.25f).coerceIn(-1f, 1f)
+                }
+
+                SteeringButton("▶") {
+                    steering = (steering + 0.25f).coerceIn(-1f, 1f)
+                }
+            }
+        }
+
+        // ACCELERATOR
+        ControlButton(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 24.dp, bottom = 18.dp),
+            icon = "▲",
+            label = "ACCELERATOR",
+            active = accelerating,
+            color = Green
+        ) {
+            accelerating = !accelerating
+            if (accelerating) braking = false
         }
 
         // SETTINGS DIALOG
@@ -439,9 +311,11 @@ fun RacingScreen() {
                             )
                         }
 
+                        Spacer(Modifier.height(8.dp))
+
                         Text(
                             if (gyroEnabled)
-                                "GYRO ON - Tilt your phone to steer"
+                                "GYRO ON - Tilt phone to steer"
                             else
                                 "GYRO OFF - Touch steering mode",
                             color = Cyan,
@@ -456,96 +330,6 @@ fun RacingScreen() {
                         Text("DONE", color = Cyan)
                     }
                 }
-            )
-        }
-
-        // GAME TITLE
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "ULTRA RACING GAME",
-                color = Cyan,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Black
-            )
-        }
-
-        // ACCELERATOR TOGGLE
-        ControlButton(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 18.dp),
-            icon = "▲",
-            label = "ACCELERATOR",
-            active = accelerating,
-            color = Green,
-            onClick = {
-                accelerating = !accelerating
-                if (accelerating) braking = false
-            }
-        )
-
-        // BRAKE TOGGLE
-        ControlButton(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 24.dp, bottom = 18.dp),
-            icon = "■",
-            label = "BRAKE",
-            active = braking,
-            color = Red,
-            onClick = {
-                braking = !braking
-                if (braking) accelerating = false
-            }
-        )
-
-        // TOUCH STEERING BUTTONS (visible only when gyro is OFF)
-        if (!gyroEnabled) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SteeringButton("◀") {
-                    steering = (steering - 0.25f).coerceIn(-1f, 1f)
-                }
-
-                SteeringButton("▶") {
-                    steering = (steering + 0.25f).coerceIn(-1f, 1f)
-                }
-            }
-        }
-
-        // RESET
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 48.dp)
-                .clickable {
-                    speed = 0
-                    accelerating = false
-                    braking = false
-                    steering = 0f
-                    roadPosition = 0f
-                },
-            shape = RoundedCornerShape(10.dp),
-            color = Color(0xDD101D30)
-        ) {
-            Text(
-                "↻ RESET",
-                modifier = Modifier.padding(
-                    horizontal = 14.dp,
-                    vertical = 8.dp
-                ),
-                color = Color.White,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -567,12 +351,6 @@ fun ControlButton(
                 if (active) color.copy(alpha = 0.30f)
                 else Color(0xDD071526),
                 RoundedCornerShape(18.dp)
-            )
-            .then(
-                if (active) Modifier.background(
-                    color.copy(alpha = 0.12f),
-                    RoundedCornerShape(18.dp)
-                ) else Modifier
             )
             .padding(
                 horizontal = 22.dp,

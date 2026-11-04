@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sceneview.SceneView
 import io.github.sceneview.rememberModelInstance
-import kotlin.math.abs
+import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.delay
 
 private val Dark = Color(0xFF050B16)
@@ -120,7 +120,7 @@ fun RacingScreen() {
             .fillMaxSize()
             .background(Dark)
     ) {
-        // REAL 3D CAR MODEL
+        // 3D CAR MODEL
         SceneView(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -128,7 +128,7 @@ fun RacingScreen() {
                 modelLoader,
                 "spectral_gt_rs_game_ready.glb"
             )?.let { instance ->
-                io.github.sceneview.ModelNode(
+                ModelNode(
                     modelInstance = instance,
                     scaleToUnits = 2.0f,
                     autoAnimate = true
@@ -247,7 +247,7 @@ fun RacingScreen() {
             if (braking) accelerating = false
         }
 
-        // STEERING
+        // TOUCH STEERING
         if (!gyroEnabled) {
             Row(
                 modifier = Modifier

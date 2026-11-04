@@ -140,8 +140,34 @@ fun RacingScreen() {
         val w = maxWidth
         val h = maxHeight
 
-        // GAME WORLD
-        Canvas(Modifier.fillMaxSize()) {
+                // REAL 3D GAME WORLD
+        io.github.sceneview.SceneView(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val carModel = io.github.sceneview.rememberModelInstance(
+                modelLoader,
+                "spectral_gt_rs_game_ready.glb"
+            )
+
+            if (carModel != null) {
+                io.github.sceneview.node.ModelNode(
+                    modelInstance = carModel,
+                    scaleToUnits = 2.0f,
+                    autoAnimate = true
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "LOADING 3D CAR...",
+                        color = Cyan,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
             val width = size.width
             val height = size.height
             val bend = steering * width * 0.12f

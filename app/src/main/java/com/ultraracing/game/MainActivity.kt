@@ -2,6 +2,7 @@
 package com.ultraracing.game
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -21,11 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.sceneview.SceneView
-import io.github.sceneview.rememberEngine
-import io.github.sceneview.rememberModelLoader
+import io.github.sceneview.Scene
 import io.github.sceneview.rememberModelInstance
-import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.delay
 
 private val Dark = Color(0xFF050B16)
@@ -37,8 +35,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        requestedOrientation =
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         window.statusBarColor = android.graphics.Color.BLACK
         window.navigationBarColor = android.graphics.Color.BLACK
@@ -61,9 +58,6 @@ fun RacingScreen() {
     var steering by remember { mutableFloatStateOf(0f) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
-
-    val engine = rememberEngine()
-    val modelLoader = rememberModelLoader(engine)
 
     DisposableEffect(gyroEnabled) {
         val manager =
@@ -125,10 +119,8 @@ fun RacingScreen() {
             .fillMaxSize()
             .background(Dark)
     ) {
-        SceneView(
-            modifier = Modifier.fillMaxSize(),
-            engine = engine,
-            modelLoader = modelLoader
+        Scene(
+            modifier = Modifier.fillMaxSize()
         ) {
             rememberModelInstance(
                 modelLoader,
@@ -194,7 +186,9 @@ fun RacingScreen() {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(14.dp)
-                .clickable { showSettings = true },
+                .clickable {
+                    showSettings = true
+                },
             shape = RoundedCornerShape(12.dp),
             color = Color(0xDD071526)
         ) {
@@ -256,11 +250,13 @@ fun RacingScreen() {
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 SteeringButton("◀") {
-                    steering = (steering - 0.25f).coerceIn(-1f, 1f)
+                    steering = (steering - 0.25f)
+                        .coerceIn(-1f, 1f)
                 }
 
                 SteeringButton("▶") {
-                    steering = (steering + 0.25f).coerceIn(-1f, 1f)
+                    steering = (steering + 0.25f)
+                        .coerceIn(-1f, 1f)
                 }
             }
         }
@@ -280,7 +276,9 @@ fun RacingScreen() {
 
         if (showSettings) {
             AlertDialog(
-                onDismissRequest = { showSettings = false },
+                onDismissRequest = {
+                    showSettings = false
+                },
                 containerColor = Color(0xFF101D30),
                 title = {
                     Text(
@@ -312,10 +310,11 @@ fun RacingScreen() {
                         Spacer(Modifier.height(8.dp))
 
                         Text(
-                            if (gyroEnabled)
+                            if (gyroEnabled) {
                                 "GYRO ON - Tilt phone to steer"
-                            else
-                                "GYRO OFF - Touch steering mode",
+                            } else {
+                                "GYRO OFF - Touch steering mode"
+                            },
                             color = Cyan,
                             fontSize = 12.sp
                         )
@@ -323,9 +322,14 @@ fun RacingScreen() {
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = { showSettings = false }
+                        onClick = {
+                            showSettings = false
+                        }
                     ) {
-                        Text("DONE", color = Cyan)
+                        Text(
+                            "DONE",
+                            color = Cyan
+                        )
                     }
                 }
             )
@@ -344,10 +348,15 @@ fun ControlButton(
 ) {
     Column(
         modifier = modifier
-            .clickable { onClick() }
+            .clickable {
+                onClick()
+            }
             .background(
-                if (active) color.copy(alpha = 0.30f)
-                else Color(0xDD071526),
+                if (active) {
+                    color.copy(alpha = 0.30f)
+                } else {
+                    Color(0xDD071526)
+                },
                 RoundedCornerShape(18.dp)
             )
             .padding(
@@ -389,11 +398,15 @@ fun SteeringButton(
     Surface(
         modifier = Modifier
             .size(58.dp)
-            .clickable { onClick() },
+            .clickable {
+                onClick()
+            },
         shape = RoundedCornerShape(15.dp),
         color = Color(0xDD071526)
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 label,
                 color = Cyan,

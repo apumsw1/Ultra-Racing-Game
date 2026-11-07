@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sceneview.SceneView
+import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberModelInstance
 import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.delay
@@ -59,6 +61,9 @@ fun RacingScreen() {
     var steering by remember { mutableFloatStateOf(0f) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    val engine = rememberEngine()
+    val modelLoader = rememberModelLoader(engine)
 
     DisposableEffect(gyroEnabled) {
         val manager =
@@ -120,9 +125,10 @@ fun RacingScreen() {
             .fillMaxSize()
             .background(Dark)
     ) {
-        // 3D CAR MODEL
         SceneView(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            engine = engine,
+            modelLoader = modelLoader
         ) {
             rememberModelInstance(
                 modelLoader,
@@ -136,7 +142,6 @@ fun RacingScreen() {
             }
         }
 
-        // SPEEDOMETER
         Card(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -175,7 +180,6 @@ fun RacingScreen() {
             }
         }
 
-        // GAME TITLE
         Text(
             "ULTRA RACING GAME",
             modifier = Modifier
@@ -186,7 +190,6 @@ fun RacingScreen() {
             fontWeight = FontWeight.Black
         )
 
-        // SETTINGS BUTTON
         Surface(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -207,7 +210,6 @@ fun RacingScreen() {
             )
         }
 
-        // RESET BUTTON
         Surface(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -233,7 +235,6 @@ fun RacingScreen() {
             )
         }
 
-        // BRAKE
         ControlButton(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -247,7 +248,6 @@ fun RacingScreen() {
             if (braking) accelerating = false
         }
 
-        // TOUCH STEERING
         if (!gyroEnabled) {
             Row(
                 modifier = Modifier
@@ -265,7 +265,6 @@ fun RacingScreen() {
             }
         }
 
-        // ACCELERATOR
         ControlButton(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -279,7 +278,6 @@ fun RacingScreen() {
             if (accelerating) braking = false
         }
 
-        // SETTINGS DIALOG
         if (showSettings) {
             AlertDialog(
                 onDismissRequest = { showSettings = false },
